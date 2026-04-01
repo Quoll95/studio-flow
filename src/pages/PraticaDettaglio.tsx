@@ -710,7 +710,7 @@ export default function PraticaDettaglio() {
 
       {/* Nota pratica modal */}
       <Dialog open={notaPraticaOpen} onOpenChange={setNotaPraticaOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto top-[45%] sm:top-[50%]">
           <DialogHeader><DialogTitle>{npEditingId ? "Modifica Nota Pratica" : "Nuova Nota Pratica"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -719,12 +719,24 @@ export default function PraticaDettaglio() {
             </div>
             <div className="space-y-2">
               <Label>Descrizione <span className="text-muted-foreground text-xs">(opzionale)</span></Label>
-              <Textarea placeholder="Descrizione..." value={npDescrizione} onChange={e => setNpDescrizione(e.target.value)} rows={3} />
+              <Textarea placeholder="Descrizione..." value={npDescrizione} onChange={e => setNpDescrizione(e.target.value)} rows={2} />
             </div>
             <div className="space-y-2">
               <Label>Data <span className="text-muted-foreground text-xs">(opzionale — apparirà nel calendario)</span></Label>
               <Input type="date" value={npData} onChange={e => setNpData(e.target.value)} />
             </div>
+            {npData && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora inizio <span className="text-muted-foreground">(opz.)</span></Label>
+                  <Input type="time" value={npOraInizio} onChange={e => setNpOraInizio(e.target.value)} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora fine <span className="text-muted-foreground">(opz.)</span></Label>
+                  <Input type="time" value={npOraFine} onChange={e => setNpOraFine(e.target.value)} className="h-9" />
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Switch checked={npCompletata} onCheckedChange={setNpCompletata} />
               <Label>{npCompletata ? "Fatto" : "Da fare"}</Label>
