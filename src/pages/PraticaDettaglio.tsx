@@ -530,6 +530,7 @@ export default function PraticaDettaglio() {
                                           <span className="text-[11px] font-medium text-primary whitespace-nowrap">
                                             <CalendarIcon className="h-3 w-3 inline mr-0.5" />
                                             {format(parseISO(p.data), "dd/MM/yyyy")}
+                                            {p.ora_inizio && ` ${p.ora_inizio.slice(0, 5)}`}
                                           </span>
                                         )}
                                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">{format(parseISO(p.created_at), "dd/MM/yy")}</span>
