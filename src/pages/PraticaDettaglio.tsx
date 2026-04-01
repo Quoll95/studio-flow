@@ -299,7 +299,19 @@ export default function PraticaDettaglio() {
     toast({ title: "Deadline aggiornata" });
     load();
   };
-  const deleteScadenza = async (sid: string) => { await supabase.from("scadenze").delete().eq("id", sid); toast({ title: "Deadline eliminata" }); load(); };
+  const deleteScadenza = async (sid: string) => {
+    const scadenza = scadenzeList.find(s => s.id === sid);
+    // Also delete linked calendar event
+    if (scadenza && id) {
+      await (supabase as any).from("eventi_calendario").delete()
+        .eq("id_pratica", id)
+        .like("titolo", `📌 ${scadenza.titolo}%`)
+        .eq("data", scadenza.data_scadenza);
+    }
+    await supabase.from("scadenze").delete().eq("id", sid);
+    toast({ title: "Deadline eliminata" });
+    load();
+  };
 
   const addScadenzaInline = async () => {
     if (!id || !newScadenzaData) return;

@@ -238,9 +238,25 @@ export default function Calendario() {
     setEventi((ev as any[])?.map((e: any) => ({ ...e, avvisi: e.avvisi || [] })) as EventoCalendario[] || []);
   };
 
-  const deleteEvent = async (id: string) => {
-    await supabase.from("eventi_calendario").delete().eq("id", id);
-    setEventi(prev => prev.filter(e => e.id !== id));
+  const deleteEvent = async (evId: string) => {
+    const ev = eventi.find(e => e.id === evId);
+    // Also delete linked pratica entities
+    if (ev?.id_pratica) {
+      if (ev.colore === "#ef4444") {
+        // It's a deadline — delete matching scadenza
+        const cleanTitle = ev.titolo.replace(/^📌\s*/, "");
+        await supabase.from("scadenze").delete()
+          .eq("id_pratica", ev.id_pratica)
+          .eq("titolo", cleanTitle);
+      } else {
+        // It may be a nota pratica — delete matching punto_situazione
+        await supabase.from("punti_situazione").delete()
+          .eq("id_pratica", ev.id_pratica)
+          .eq("testo", ev.titolo);
+      }
+    }
+    await supabase.from("eventi_calendario").delete().eq("id", evId);
+    setEventi(prev => prev.filter(e => e.id !== evId));
     toast({ title: "Evento eliminato" });
   };
 
