@@ -1100,25 +1100,27 @@ export default function PuntoSituazione() {
     const pratica = pratiche.find(p => p.id === addPraticaId);
     const minOrdine = pratica?.punti_attivi.length ? Math.min(...pratica.punti_attivi.map(p => p.ordine)) - 1 : 0;
     
-    const dataFinale = getOrarioCombinato();
+    const oraInizio = getOraInizio();
 
     const { error } = await supabase.from("punti_situazione").insert({
       id_pratica: addPraticaId, testo: npTitolo.trim(),
       descrizione: npDescrizione.trim() || null,
       completata: npCompletata, ordine: minOrdine,
-      data: dataFinale,
+      data: npData || null,
+      ora_inizio: npData && oraInizio ? oraInizio : null,
     } as any);
     
     if (error) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
     
-    if (dataFinale) {
+    if (npData) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.from("eventi_calendario").insert({
           user_id: user.id,
           titolo: npTitolo.trim(),
           colore: pratica?.colore || "#3b82f6",
-          data: dataFinale,
+          data: npData,
+          ora_inizio: oraInizio || null,
           id_pratica: addPraticaId,
         } as any);
       }
