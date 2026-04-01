@@ -493,7 +493,7 @@ export default function PraticaDettaglio() {
                     <CardTitle className="text-lg flex items-center gap-2"><FileText className="h-5 w-5" /> Nota Pratica</CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">{pratica.titolo} — {getClientName(pratica)}</p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => { setNpEditingId(null); setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNotaPraticaOpen(true); }}>
+                  <Button size="sm" variant="outline" onClick={() => { setNpEditingId(null); setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOraInizio(""); setNpOraFine(""); setNotaPraticaOpen(true); }}>
                     <Plus className="h-4 w-4 mr-1" /> Aggiungi
                   </Button>
                 </CardHeader>
