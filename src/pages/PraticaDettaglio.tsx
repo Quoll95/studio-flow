@@ -75,6 +75,8 @@ export default function PraticaDettaglio() {
   const [npDescrizione, setNpDescrizione] = useState("");
   const [npCompletata, setNpCompletata] = useState(false);
   const [npData, setNpData] = useState("");
+  const [npOraInizio, setNpOraInizio] = useState("");
+  const [npOraFine, setNpOraFine] = useState("");
   const [npEditingId, setNpEditingId] = useState<string | null>(null);
 
   const [newNota, setNewNota] = useState("");
