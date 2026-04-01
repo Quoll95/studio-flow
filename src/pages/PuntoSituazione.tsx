@@ -1090,10 +1090,9 @@ export default function PuntoSituazione() {
     load();
   };
 
-  const getOrarioCombinato = () => {
-    if (!npData) return null;
-    if (npOra && npMinuti) return `${npData}T${npOra}:${npMinuti}`;
-    return npData;
+  const getOraInizio = () => {
+    if (npOra && npMinuti) return `${npOra}:${npMinuti}`;
+    return null;
   };
 
   const handleAdd = async () => {
