@@ -1,0 +1,1 @@
+ALTER TABLE public.punti_situazione ADD COLUMN IF NOT EXISTS descrizione text;

@@ -1,0 +1,1 @@
+ALTER TABLE public.punti_situazione ADD COLUMN data date DEFAULT NULL;

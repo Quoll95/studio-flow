@@ -1,0 +1,1 @@
+ALTER TABLE public.pratiche ADD COLUMN cliente_nome text;
