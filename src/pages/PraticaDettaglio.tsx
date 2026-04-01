@@ -231,6 +231,8 @@ export default function PraticaDettaglio() {
     setNpDescrizione(p.descrizione || "");
     setNpCompletata(p.completata);
     setNpData(p.data || "");
+    setNpOraInizio(p.ora_inizio || "");
+    setNpOraFine(p.ora_fine || "");
     setNotaPraticaOpen(true);
   };
 
