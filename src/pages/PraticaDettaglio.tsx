@@ -75,6 +75,8 @@ export default function PraticaDettaglio() {
   const [npDescrizione, setNpDescrizione] = useState("");
   const [npCompletata, setNpCompletata] = useState(false);
   const [npData, setNpData] = useState("");
+  const [npOraInizio, setNpOraInizio] = useState("");
+  const [npOraFine, setNpOraFine] = useState("");
   const [npEditingId, setNpEditingId] = useState<string | null>(null);
 
   const [newNota, setNewNota] = useState("");
@@ -185,10 +187,11 @@ export default function PraticaDettaglio() {
   const addNotaPratica = async () => {
     if (!id || !npTitolo.trim()) return;
     if (npEditingId) {
-      // Update existing
       await supabase.from("punti_situazione").update({
         testo: npTitolo.trim(), descrizione: npDescrizione.trim() || null,
         completata: npCompletata, data: npData || null,
+        ora_inizio: npData && npOraInizio ? npOraInizio : null,
+        ora_fine: npData && npOraFine ? npOraFine : null,
       } as any).eq("id", npEditingId);
       toast({ title: "Nota pratica aggiornata" });
     } else {
@@ -197,6 +200,8 @@ export default function PraticaDettaglio() {
         id_pratica: id, testo: npTitolo.trim(), descrizione: npDescrizione.trim() || null,
         completata: npCompletata, ordine: minOrdine,
         data: npData || null,
+        ora_inizio: npData && npOraInizio ? npOraInizio : null,
+        ora_fine: npData && npOraFine ? npOraFine : null,
       } as any);
       // If date is set, create calendar event
       if (npData) {
@@ -207,13 +212,15 @@ export default function PraticaDettaglio() {
             titolo: npTitolo.trim(),
             colore: pratica?.colore || "#3b82f6",
             data: npData,
+            ora_inizio: npOraInizio || null,
+            ora_fine: npOraFine || null,
             id_pratica: id,
           } as any);
         }
       }
       toast({ title: "Nota pratica aggiunta" });
     }
-    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpEditingId(null);
+    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOraInizio(""); setNpOraFine(""); setNpEditingId(null);
     setNotaPraticaOpen(false);
     load();
   };
@@ -224,10 +231,19 @@ export default function PraticaDettaglio() {
     setNpDescrizione(p.descrizione || "");
     setNpCompletata(p.completata);
     setNpData(p.data || "");
+    setNpOraInizio(p.ora_inizio || "");
+    setNpOraFine(p.ora_fine || "");
     setNotaPraticaOpen(true);
   };
 
   const deletePunto = async (pid: string) => {
+    const punto = punti.find(p => p.id === pid);
+    // Also delete linked calendar event
+    if (punto && id) {
+      await (supabase as any).from("eventi_calendario").delete()
+        .eq("id_pratica", id)
+        .eq("titolo", punto.testo);
+    }
     await supabase.from("punti_situazione").delete().eq("id", pid);
     toast({ title: "Nota pratica eliminata" });
     load();
@@ -292,7 +308,19 @@ export default function PraticaDettaglio() {
     toast({ title: "Deadline aggiornata" });
     load();
   };
-  const deleteScadenza = async (sid: string) => { await supabase.from("scadenze").delete().eq("id", sid); toast({ title: "Deadline eliminata" }); load(); };
+  const deleteScadenza = async (sid: string) => {
+    const scadenza = scadenzeList.find(s => s.id === sid);
+    // Also delete linked calendar event
+    if (scadenza && id) {
+      await (supabase as any).from("eventi_calendario").delete()
+        .eq("id_pratica", id)
+        .like("titolo", `📌 ${scadenza.titolo}%`)
+        .eq("data", scadenza.data_scadenza);
+    }
+    await supabase.from("scadenze").delete().eq("id", sid);
+    toast({ title: "Deadline eliminata" });
+    load();
+  };
 
   const addScadenzaInline = async () => {
     if (!id || !newScadenzaData) return;
@@ -465,7 +493,7 @@ export default function PraticaDettaglio() {
                     <CardTitle className="text-lg flex items-center gap-2"><FileText className="h-5 w-5" /> Nota Pratica</CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">{pratica.titolo} — {getClientName(pratica)}</p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => { setNpEditingId(null); setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNotaPraticaOpen(true); }}>
+                  <Button size="sm" variant="outline" onClick={() => { setNpEditingId(null); setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOraInizio(""); setNpOraFine(""); setNotaPraticaOpen(true); }}>
                     <Plus className="h-4 w-4 mr-1" /> Aggiungi
                   </Button>
                 </CardHeader>
@@ -502,6 +530,7 @@ export default function PraticaDettaglio() {
                                           <span className="text-[11px] font-medium text-primary whitespace-nowrap">
                                             <CalendarIcon className="h-3 w-3 inline mr-0.5" />
                                             {format(parseISO(p.data), "dd/MM/yyyy")}
+                                            {p.ora_inizio && ` ${p.ora_inizio.slice(0, 5)}`}
                                           </span>
                                         )}
                                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">{format(parseISO(p.created_at), "dd/MM/yy")}</span>
@@ -682,7 +711,7 @@ export default function PraticaDettaglio() {
 
       {/* Nota pratica modal */}
       <Dialog open={notaPraticaOpen} onOpenChange={setNotaPraticaOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto top-[45%] sm:top-[50%]">
           <DialogHeader><DialogTitle>{npEditingId ? "Modifica Nota Pratica" : "Nuova Nota Pratica"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -691,12 +720,24 @@ export default function PraticaDettaglio() {
             </div>
             <div className="space-y-2">
               <Label>Descrizione <span className="text-muted-foreground text-xs">(opzionale)</span></Label>
-              <Textarea placeholder="Descrizione..." value={npDescrizione} onChange={e => setNpDescrizione(e.target.value)} rows={3} />
+              <Textarea placeholder="Descrizione..." value={npDescrizione} onChange={e => setNpDescrizione(e.target.value)} rows={2} />
             </div>
             <div className="space-y-2">
               <Label>Data <span className="text-muted-foreground text-xs">(opzionale — apparirà nel calendario)</span></Label>
               <Input type="date" value={npData} onChange={e => setNpData(e.target.value)} />
             </div>
+            {npData && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora inizio <span className="text-muted-foreground">(opz.)</span></Label>
+                  <Input type="time" value={npOraInizio} onChange={e => setNpOraInizio(e.target.value)} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora fine <span className="text-muted-foreground">(opz.)</span></Label>
+                  <Input type="time" value={npOraFine} onChange={e => setNpOraFine(e.target.value)} className="h-9" />
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Switch checked={npCompletata} onCheckedChange={setNpCompletata} />
               <Label>{npCompletata ? "Fatto" : "Da fare"}</Label>
