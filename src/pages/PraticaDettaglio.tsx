@@ -187,10 +187,11 @@ export default function PraticaDettaglio() {
   const addNotaPratica = async () => {
     if (!id || !npTitolo.trim()) return;
     if (npEditingId) {
-      // Update existing
       await supabase.from("punti_situazione").update({
         testo: npTitolo.trim(), descrizione: npDescrizione.trim() || null,
         completata: npCompletata, data: npData || null,
+        ora_inizio: npData && npOraInizio ? npOraInizio : null,
+        ora_fine: npData && npOraFine ? npOraFine : null,
       } as any).eq("id", npEditingId);
       toast({ title: "Nota pratica aggiornata" });
     } else {
@@ -199,6 +200,8 @@ export default function PraticaDettaglio() {
         id_pratica: id, testo: npTitolo.trim(), descrizione: npDescrizione.trim() || null,
         completata: npCompletata, ordine: minOrdine,
         data: npData || null,
+        ora_inizio: npData && npOraInizio ? npOraInizio : null,
+        ora_fine: npData && npOraFine ? npOraFine : null,
       } as any);
       // If date is set, create calendar event
       if (npData) {
@@ -209,13 +212,15 @@ export default function PraticaDettaglio() {
             titolo: npTitolo.trim(),
             colore: pratica?.colore || "#3b82f6",
             data: npData,
+            ora_inizio: npOraInizio || null,
+            ora_fine: npOraFine || null,
             id_pratica: id,
           } as any);
         }
       }
       toast({ title: "Nota pratica aggiunta" });
     }
-    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpEditingId(null);
+    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOraInizio(""); setNpOraFine(""); setNpEditingId(null);
     setNotaPraticaOpen(false);
     load();
   };
