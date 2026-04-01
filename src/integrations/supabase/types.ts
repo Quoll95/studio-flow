@@ -638,6 +638,8 @@ export type Database = {
           descrizione: string | null
           id: string
           id_pratica: string
+          ora_fine: string | null
+          ora_inizio: string | null
           ordine: number
           testo: string
         }
@@ -648,6 +650,8 @@ export type Database = {
           descrizione?: string | null
           id?: string
           id_pratica: string
+          ora_fine?: string | null
+          ora_inizio?: string | null
           ordine?: number
           testo: string
         }
@@ -658,6 +662,8 @@ export type Database = {
           descrizione?: string | null
           id?: string
           id_pratica?: string
+          ora_fine?: string | null
+          ora_inizio?: string | null
           ordine?: number
           testo?: string
         }
