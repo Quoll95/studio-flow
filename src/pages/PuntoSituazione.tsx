@@ -1291,7 +1291,7 @@ export default function PuntoSituazione() {
                                         <CalendarIcon className="h-3 w-3 inline mr-0.5" />
                                         {
                                           punto.ora_inizio 
-                                          ? format(parseISO(punto.data), "dd/MM/yy") + ` ${punto.ora_inizio}`
+                                          ? format(parseISO(punto.data), "dd/MM/yy") + ` ${punto.ora_inizio.slice(0, 5)}`
                                           : format(parseISO(punto.data), "dd/MM/yy")
                                         }
                                         {/* {punto.data.includes("T")
