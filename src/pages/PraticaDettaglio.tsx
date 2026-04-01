@@ -228,6 +228,13 @@ export default function PraticaDettaglio() {
   };
 
   const deletePunto = async (pid: string) => {
+    const punto = punti.find(p => p.id === pid);
+    // Also delete linked calendar event
+    if (punto && id) {
+      await (supabase as any).from("eventi_calendario").delete()
+        .eq("id_pratica", id)
+        .eq("titolo", punto.testo);
+    }
     await supabase.from("punti_situazione").delete().eq("id", pid);
     toast({ title: "Nota pratica eliminata" });
     load();
