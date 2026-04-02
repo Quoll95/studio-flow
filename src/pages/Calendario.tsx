@@ -606,7 +606,7 @@ export default function Calendario() {
                 ))}
               </div>
             </div>
-            <Button className="w-full h-12" onClick={handleSaveEvent} disabled={!eventForm.titolo || !eventForm.data}>{editingEventId ? "Salva Modifiche" : "Crea Evento"}</Button>
+            <Button className="w-full h-12 hidden sm:flex" onClick={handleSaveEvent} disabled={!eventForm.titolo || !eventForm.data}>{editingEventId ? "Salva Modifiche" : "Crea Evento"}</Button>
           </div>
         </DialogContent>
       </Dialog>
