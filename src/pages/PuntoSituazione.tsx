@@ -1038,6 +1038,8 @@ export default function PuntoSituazione() {
   const [npData, setNpData] = useState("");
   const [npOra, setNpOra] = useState("");
   const [npMinuti, setNpMinuti] = useState("");
+  const [npOraFineH, setNpOraFineH] = useState("");
+  const [npOraFineM, setNpOraFineM] = useState("");
 
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
