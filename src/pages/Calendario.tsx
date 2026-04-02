@@ -562,8 +562,14 @@ export default function Calendario() {
               <Input type="date" value={eventForm.data} onChange={e => setEventForm(f => ({ ...f, data: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Ora inizio</Label><Input type="time" value={eventForm.ora_inizio} onChange={e => setEventForm(f => ({ ...f, ora_inizio: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Ora fine</Label><Input type="time" value={eventForm.ora_fine} onChange={e => setEventForm(f => ({ ...f, ora_fine: e.target.value }))} /></div>
+              <div className="space-y-2">
+                <Label>Ora inizio</Label>
+                <TimePicker ora={eventForm.ora_inizio.split(":")[0] || ""} minuti={eventForm.ora_inizio.split(":")[1] || ""} onOraChange={h => setEventForm(f => ({ ...f, ora_inizio: `${h}:${f.ora_inizio.split(":")[1] || "00"}` }))} onMinutiChange={m => setEventForm(f => ({ ...f, ora_inizio: `${f.ora_inizio.split(":")[0] || "00"}:${m}` }))} disabled={!eventForm.data} />
+              </div>
+              <div className="space-y-2">
+                <Label>Ora fine</Label>
+                <TimePicker ora={eventForm.ora_fine.split(":")[0] || ""} minuti={eventForm.ora_fine.split(":")[1] || ""} onOraChange={h => setEventForm(f => ({ ...f, ora_fine: `${h}:${f.ora_fine.split(":")[1] || "00"}` }))} onMinutiChange={m => setEventForm(f => ({ ...f, ora_fine: `${f.ora_fine.split(":")[0] || "00"}:${m}` }))} disabled={!eventForm.data} />
+              </div>
             </div>
             {!eventForm.id_pratica && (
             <div className="space-y-2">
