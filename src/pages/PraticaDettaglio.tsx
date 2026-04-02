@@ -761,9 +761,10 @@ export default function PraticaDettaglio() {
       */}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>Modifica Pratica</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <Button type="submit" className="w-full h-12 sm:hidden">Salva Modifiche</Button>
             <div className="space-y-2"><Label>Titolo</Label><Input value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} required /></div>
             <div className="space-y-2"><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} /></div>
             <div className="space-y-2">
