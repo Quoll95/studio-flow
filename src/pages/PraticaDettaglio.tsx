@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Edit, Lock, CalendarIcon, Plus, Trash2, CheckCircle2, Circle, Printer, Pencil, Euro, TrendingDown, TrendingUp, GripVertical, StickyNote, FileText, Bell } from "lucide-react";
+import TimePicker from "@/components/TimePicker";
 import PostItNote from "@/components/PostItNote";
 import DraggablePostItGrid from "@/components/DraggablePostItGrid";
 import logoNero from "@/assets/logo-scritta-grande.png";
@@ -711,8 +712,9 @@ export default function PraticaDettaglio() {
 
       {/* Nota pratica modal */}
       <Dialog open={notaPraticaOpen} onOpenChange={setNotaPraticaOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto top-[45%] sm:top-[50%]">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>{npEditingId ? "Modifica Nota Pratica" : "Nuova Nota Pratica"}</DialogTitle></DialogHeader>
+          <Button className="w-full h-12 sm:hidden" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Titolo</Label>
@@ -726,23 +728,21 @@ export default function PraticaDettaglio() {
               <Label>Data <span className="text-muted-foreground text-xs">(opzionale — apparirà nel calendario)</span></Label>
               <Input type="date" value={npData} onChange={e => setNpData(e.target.value)} />
             </div>
-            {npData && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Ora inizio <span className="text-muted-foreground">(opz.)</span></Label>
-                  <Input type="time" value={npOraInizio} onChange={e => setNpOraInizio(e.target.value)} className="h-9" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Ora fine <span className="text-muted-foreground">(opz.)</span></Label>
-                  <Input type="time" value={npOraFine} onChange={e => setNpOraFine(e.target.value)} className="h-9" />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Ora inizio <span className="text-muted-foreground">(opz.)</span></Label>
+                <TimePicker ora={npOraInizio.split(":")[0] || ""} minuti={npOraInizio.split(":")[1] || ""} onOraChange={h => setNpOraInizio(`${h}:${npOraInizio.split(":")[1] || "00"}`)} onMinutiChange={m => setNpOraInizio(`${npOraInizio.split(":")[0] || "00"}:${m}`)} disabled={!npData} />
               </div>
-            )}
+              <div className="space-y-1">
+                <Label className="text-xs">Ora fine <span className="text-muted-foreground">(opz.)</span></Label>
+                <TimePicker ora={npOraFine.split(":")[0] || ""} minuti={npOraFine.split(":")[1] || ""} onOraChange={h => setNpOraFine(`${h}:${npOraFine.split(":")[1] || "00"}`)} onMinutiChange={m => setNpOraFine(`${npOraFine.split(":")[0] || "00"}:${m}`)} disabled={!npData} />
+              </div>
+            </div>
             <div className="flex items-center gap-3">
               <Switch checked={npCompletata} onCheckedChange={setNpCompletata} />
               <Label>{npCompletata ? "Fatto" : "Da fare"}</Label>
             </div>
-            <Button className="w-full h-12" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
+            <Button className="w-full h-12 hidden sm:flex" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -761,9 +761,10 @@ export default function PraticaDettaglio() {
       */}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>Modifica Pratica</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <Button type="submit" className="w-full h-12 sm:hidden">Salva Modifiche</Button>
             <div className="space-y-2"><Label>Titolo</Label><Input value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} required /></div>
             <div className="space-y-2"><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} /></div>
             <div className="space-y-2">
@@ -828,7 +829,7 @@ export default function PraticaDettaglio() {
               ))}
             </div>
 
-            <Button type="submit" className="w-full h-12">Salva Modifiche</Button>
+            <Button type="submit" className="w-full h-12 hidden sm:flex">Salva Modifiche</Button>
           </form>
         </DialogContent>
       </Dialog>

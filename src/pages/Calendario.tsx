@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Plus, Trash2, Bell, StickyNote, Edit } from "lucide-react";
+import TimePicker from "@/components/TimePicker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, parseISO, isToday, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, isSameMonth } from "date-fns";
 import { it } from "date-fns/locale";
@@ -507,8 +508,9 @@ export default function Calendario() {
 
       {/* New Event Dialog */}
       <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>{editingEventId ? "Modifica Evento" : "Nuovo Evento"}</DialogTitle></DialogHeader>
+          <Button className="w-full h-12 sm:hidden" onClick={handleSaveEvent} disabled={!eventForm.titolo || !eventForm.data}>{editingEventId ? "Salva Modifiche" : "Crea Evento"}</Button>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Titolo</Label>
@@ -562,8 +564,14 @@ export default function Calendario() {
               <Input type="date" value={eventForm.data} onChange={e => setEventForm(f => ({ ...f, data: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Ora inizio</Label><Input type="time" value={eventForm.ora_inizio} onChange={e => setEventForm(f => ({ ...f, ora_inizio: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Ora fine</Label><Input type="time" value={eventForm.ora_fine} onChange={e => setEventForm(f => ({ ...f, ora_fine: e.target.value }))} /></div>
+              <div className="space-y-2">
+                <Label>Ora inizio</Label>
+                <TimePicker ora={eventForm.ora_inizio.split(":")[0] || ""} minuti={eventForm.ora_inizio.split(":")[1] || ""} onOraChange={h => setEventForm(f => ({ ...f, ora_inizio: `${h}:${f.ora_inizio.split(":")[1] || "00"}` }))} onMinutiChange={m => setEventForm(f => ({ ...f, ora_inizio: `${f.ora_inizio.split(":")[0] || "00"}:${m}` }))} disabled={!eventForm.data} />
+              </div>
+              <div className="space-y-2">
+                <Label>Ora fine</Label>
+                <TimePicker ora={eventForm.ora_fine.split(":")[0] || ""} minuti={eventForm.ora_fine.split(":")[1] || ""} onOraChange={h => setEventForm(f => ({ ...f, ora_fine: `${h}:${f.ora_fine.split(":")[1] || "00"}` }))} onMinutiChange={m => setEventForm(f => ({ ...f, ora_fine: `${f.ora_fine.split(":")[0] || "00"}:${m}` }))} disabled={!eventForm.data} />
+              </div>
             </div>
             {!eventForm.id_pratica && (
             <div className="space-y-2">
@@ -598,7 +606,7 @@ export default function Calendario() {
                 ))}
               </div>
             </div>
-            <Button className="w-full h-12" onClick={handleSaveEvent} disabled={!eventForm.titolo || !eventForm.data}>{editingEventId ? "Salva Modifiche" : "Crea Evento"}</Button>
+            <Button className="w-full h-12 hidden sm:flex" onClick={handleSaveEvent} disabled={!eventForm.titolo || !eventForm.data}>{editingEventId ? "Salva Modifiche" : "Crea Evento"}</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -999,6 +999,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import TimePicker from "@/components/TimePicker";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Printer, GripVertical, Clock, CalendarIcon } from "lucide-react";
 import { format, parseISO, isPast, isToday } from "date-fns";
@@ -1037,6 +1038,8 @@ export default function PuntoSituazione() {
   const [npData, setNpData] = useState("");
   const [npOra, setNpOra] = useState("");
   const [npMinuti, setNpMinuti] = useState("");
+  const [npOraFineH, setNpOraFineH] = useState("");
+  const [npOraFineM, setNpOraFineM] = useState("");
 
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -1095,12 +1098,18 @@ export default function PuntoSituazione() {
     return null;
   };
 
+  const getOraFine = () => {
+    if (npOraFineH && npOraFineM) return `${npOraFineH}:${npOraFineM}`;
+    return null;
+  };
+
   const handleAdd = async () => {
     if (!addPraticaId || !npTitolo.trim()) return;
     const pratica = pratiche.find(p => p.id === addPraticaId);
     const minOrdine = pratica?.punti_attivi.length ? Math.min(...pratica.punti_attivi.map(p => p.ordine)) - 1 : 0;
     
     const oraInizio = getOraInizio();
+    const oraFine = getOraFine();
 
     const { error } = await supabase.from("punti_situazione").insert({
       id_pratica: addPraticaId, testo: npTitolo.trim(),
@@ -1108,6 +1117,7 @@ export default function PuntoSituazione() {
       completata: npCompletata, ordine: minOrdine,
       data: npData || null,
       ora_inizio: npData && oraInizio ? oraInizio : null,
+      ora_fine: npData && oraFine ? oraFine : null,
     } as any);
     
     if (error) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
@@ -1127,7 +1137,7 @@ export default function PuntoSituazione() {
     }
     
     toast({ title: "Nota pratica aggiunta" });
-    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOra(""); setNpMinuti(""); setAddDialogOpen(false); load();
+    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOra(""); setNpMinuti(""); setNpOraFineH(""); setNpOraFineM(""); setAddDialogOpen(false); load();
   };
 
   const handlePrint = () => { window.print(); };
@@ -1324,6 +1334,7 @@ export default function PuntoSituazione() {
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="w-[95vw] sm:max-w-md top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%] mb-10 max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nuova nota pratica — {addPraticaTitolo}</DialogTitle></DialogHeader>
+          <Button className="w-full h-12 sm:hidden" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
           <div className="space-y-4 pb-4">
             <div className="space-y-2">
               <Label>Titolo</Label>
@@ -1341,35 +1352,20 @@ export default function PuntoSituazione() {
               <Label>Data <span className="text-muted-foreground text-xs">(opzionale)</span></Label>
               <Input type="date" value={npData} onChange={e => {
                 setNpData(e.target.value);
-                if (!e.target.value) { setNpOra(""); setNpMinuti(""); }
+                if (!e.target.value) { setNpOra(""); setNpMinuti(""); setNpOraFineH(""); setNpOraFineM(""); }
               }} />
             </div>
-            
-            {npData && (
-              <div className="space-y-2 pt-1 border-t">
-                <Label>Orario di Inizio <span className="text-muted-foreground text-xs">(opzionale, a step di 5 min)</span></Label>
-                <div className="flex gap-2">
-                  <Select value={npOra} onValueChange={setNpOra}>
-                    <SelectTrigger><SelectValue placeholder="Ore" /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={npMinuti} onValueChange={setNpMinuti}>
-                    <SelectTrigger><SelectValue placeholder="Minuti" /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({length: 12}, (_, i) => (i * 5).toString().padStart(2, '0')).map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Ora inizio <span className="text-muted-foreground">(opz.)</span></Label>
+                <TimePicker ora={npOra} minuti={npMinuti} onOraChange={setNpOra} onMinutiChange={setNpMinuti} disabled={!npData} />
               </div>
-            )}
-            
-            <Button className="w-full h-12 mt-2" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
+              <div className="space-y-1">
+                <Label className="text-xs">Ora fine <span className="text-muted-foreground">(opz.)</span></Label>
+                <TimePicker ora={npOraFineH} minuti={npOraFineM} onOraChange={setNpOraFineH} onMinutiChange={setNpOraFineM} disabled={!npData} />
+              </div>
+            </div>
+            <Button className="w-full h-12 mt-2 hidden sm:flex" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
           </div>
         </DialogContent>
       </Dialog>
