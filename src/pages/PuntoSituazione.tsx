@@ -1098,6 +1098,11 @@ export default function PuntoSituazione() {
     return null;
   };
 
+  const getOraFine = () => {
+    if (npOraFineH && npOraFineM) return `${npOraFineH}:${npOraFineM}`;
+    return null;
+  };
+
   const handleAdd = async () => {
     if (!addPraticaId || !npTitolo.trim()) return;
     const pratica = pratiche.find(p => p.id === addPraticaId);
