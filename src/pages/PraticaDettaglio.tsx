@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Edit, Lock, CalendarIcon, Plus, Trash2, CheckCircle2, Circle, Printer, Pencil, Euro, TrendingDown, TrendingUp, GripVertical, StickyNote, FileText, Bell } from "lucide-react";
+import TimePicker from "@/components/TimePicker";
 import PostItNote from "@/components/PostItNote";
 import DraggablePostItGrid from "@/components/DraggablePostItGrid";
 import logoNero from "@/assets/logo-scritta-grande.png";
