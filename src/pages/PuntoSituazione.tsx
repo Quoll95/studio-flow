@@ -1137,7 +1137,7 @@ export default function PuntoSituazione() {
     }
     
     toast({ title: "Nota pratica aggiunta" });
-    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOra(""); setNpMinuti(""); setAddDialogOpen(false); load();
+    setNpTitolo(""); setNpDescrizione(""); setNpCompletata(false); setNpData(""); setNpOra(""); setNpMinuti(""); setNpOraFineH(""); setNpOraFineM(""); setAddDialogOpen(false); load();
   };
 
   const handlePrint = () => { window.print(); };
