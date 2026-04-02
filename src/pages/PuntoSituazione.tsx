@@ -1109,6 +1109,7 @@ export default function PuntoSituazione() {
     const minOrdine = pratica?.punti_attivi.length ? Math.min(...pratica.punti_attivi.map(p => p.ordine)) - 1 : 0;
     
     const oraInizio = getOraInizio();
+    const oraFine = getOraFine();
 
     const { error } = await supabase.from("punti_situazione").insert({
       id_pratica: addPraticaId, testo: npTitolo.trim(),
@@ -1116,6 +1117,7 @@ export default function PuntoSituazione() {
       completata: npCompletata, ordine: minOrdine,
       data: npData || null,
       ora_inizio: npData && oraInizio ? oraInizio : null,
+      ora_fine: npData && oraFine ? oraFine : null,
     } as any);
     
     if (error) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
