@@ -829,7 +829,7 @@ export default function PraticaDettaglio() {
               ))}
             </div>
 
-            <Button type="submit" className="w-full h-12">Salva Modifiche</Button>
+            <Button type="submit" className="w-full h-12 hidden sm:flex">Salva Modifiche</Button>
           </form>
         </DialogContent>
       </Dialog>
