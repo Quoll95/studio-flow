@@ -2042,7 +2042,7 @@ export default function Pratiche() {
               {scadenze.length === 0 && <p className="text-xs text-muted-foreground">Nessuna scadenza aggiunta.</p>}
             </div>
 
-            <Button type="submit" className="w-full h-12">{editId ? "Salva Modifiche" : "Crea Pratica"}</Button>
+            <Button type="submit" className="w-full h-12 hidden sm:flex">{editId ? "Salva Modifiche" : "Crea Pratica"}</Button>
           </form>
         </DialogContent>
       </Dialog>
