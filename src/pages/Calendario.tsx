@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Plus, Trash2, Bell, StickyNote, Edit } from "lucide-react";
+import TimePicker from "@/components/TimePicker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, parseISO, isToday, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, isSameMonth } from "date-fns";
 import { it } from "date-fns/locale";
