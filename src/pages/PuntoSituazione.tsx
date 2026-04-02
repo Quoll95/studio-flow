@@ -1334,6 +1334,7 @@ export default function PuntoSituazione() {
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="w-[95vw] sm:max-w-md top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%] mb-10 max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nuova nota pratica — {addPraticaTitolo}</DialogTitle></DialogHeader>
+          <Button className="w-full h-12 sm:hidden" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
           <div className="space-y-4 pb-4">
             <div className="space-y-2">
               <Label>Titolo</Label>
@@ -1351,35 +1352,20 @@ export default function PuntoSituazione() {
               <Label>Data <span className="text-muted-foreground text-xs">(opzionale)</span></Label>
               <Input type="date" value={npData} onChange={e => {
                 setNpData(e.target.value);
-                if (!e.target.value) { setNpOra(""); setNpMinuti(""); }
+                if (!e.target.value) { setNpOra(""); setNpMinuti(""); setNpOraFineH(""); setNpOraFineM(""); }
               }} />
             </div>
-            
-            {npData && (
-              <div className="space-y-2 pt-1 border-t">
-                <Label>Orario di Inizio <span className="text-muted-foreground text-xs">(opzionale, a step di 5 min)</span></Label>
-                <div className="flex gap-2">
-                  <Select value={npOra} onValueChange={setNpOra}>
-                    <SelectTrigger><SelectValue placeholder="Ore" /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={npMinuti} onValueChange={setNpMinuti}>
-                    <SelectTrigger><SelectValue placeholder="Minuti" /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({length: 12}, (_, i) => (i * 5).toString().padStart(2, '0')).map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Ora inizio <span className="text-muted-foreground">(opz.)</span></Label>
+                <TimePicker ora={npOra} minuti={npMinuti} onOraChange={setNpOra} onMinutiChange={setNpMinuti} disabled={!npData} />
               </div>
-            )}
-            
-            <Button className="w-full h-12 mt-2" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
+              <div className="space-y-1">
+                <Label className="text-xs">Ora fine <span className="text-muted-foreground">(opz.)</span></Label>
+                <TimePicker ora={npOraFineH} minuti={npOraFineM} onOraChange={setNpOraFineH} onMinutiChange={setNpOraFineM} disabled={!npData} />
+              </div>
+            </div>
+            <Button className="w-full h-12 mt-2 hidden sm:flex" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
           </div>
         </DialogContent>
       </Dialog>
