@@ -508,8 +508,9 @@ export default function Calendario() {
 
       {/* New Event Dialog */}
       <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>{editingEventId ? "Modifica Evento" : "Nuovo Evento"}</DialogTitle></DialogHeader>
+          <Button className="w-full h-12 sm:hidden" onClick={handleSaveEvent} disabled={!eventForm.titolo || !eventForm.data}>{editingEventId ? "Salva Modifiche" : "Crea Evento"}</Button>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Titolo</Label>
