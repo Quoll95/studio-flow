@@ -91,7 +91,6 @@ export default function Calendario() {
         const { data: noteDays } = await (supabase as any)
           .from("note_giornaliere_postit")
           .select("data")
-          .eq("user_id", userId)
           .gte("data", start)
           .lte("data", end);
         const set = new Set<string>();
@@ -108,7 +107,6 @@ export default function Calendario() {
     const dateStr = format(currentDate, "yyyy-MM-dd");
     (supabase as any).from("note_giornaliere_postit")
       .select("*")
-      .eq("user_id", userId)
       .eq("data", dateStr)
       .order("ordine")
       .then(({ data }: any) => setDayPostits((data as NotaGiornalieraPostit[]) || []));
