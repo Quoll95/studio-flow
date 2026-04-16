@@ -77,8 +77,8 @@ export default function NettoTasse() {
   const load = async () => {
     if (!userId) return;
     const [{ data: configs }, { data: storico }] = await Promise.all([
-      (supabase as any).from("netto_tasse_config").select("*").eq("user_id", userId),
-      (supabase as any).from("netto_tasse_storico").select("*").eq("user_id", userId).order("anno", { ascending: false }),
+      (supabase as any).from("netto_tasse_config").select("*"),
+      (supabase as any).from("netto_tasse_storico").select("*").order("anno", { ascending: false }),
     ]);
 
     const catData: Record<string, CatConfig> = {};

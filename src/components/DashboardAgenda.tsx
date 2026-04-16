@@ -168,13 +168,13 @@ export default function DashboardAgenda() {
         { data: notePostitData },
         { data: scFutureAvvisi },
       ] = await Promise.all([
-        (supabase as any).from("eventi_calendario").select("*").eq("user_id", user.id).eq("data", oggi).order("ora_inizio"),
+        (supabase as any).from("eventi_calendario").select("*").eq("data", oggi).order("ora_inizio"),
         supabase.from("scadenze").select("*, pratiche(titolo)").eq("data_scadenza", oggi).eq("completata", false),
-        (supabase as any).from("eventi_calendario").select("*").eq("user_id", user.id).gt("data", oggi).lte("data", fineMeseAvvisi),
+        (supabase as any).from("eventi_calendario").select("*").gt("data", oggi).lte("data", fineMeseAvvisi),
         supabase.from("scadenze").select("*, pratiche(titolo)").gt("data_scadenza", oggi).lte("data_scadenza", fineSettimana).eq("completata", false).order("data_scadenza"),
         supabase.from("scadenze").select("*, pratiche(titolo)").lt("data_scadenza", oggi).eq("completata", false).order("data_scadenza"),
         supabase.from("punti_situazione").select("*, pratiche(titolo, colore)").eq("completata", false).gte("data", oggi).lte("data", fineSettimana).order("data"),
-        (supabase as any).from("note_giornaliere_postit").select("*").eq("user_id", user.id).eq("data", oggi).order("ordine"),
+        (supabase as any).from("note_giornaliere_postit").select("*").eq("data", oggi).order("ordine"),
         supabase.from("scadenze").select("*, pratiche(titolo)").gt("data_scadenza", oggi).lte("data_scadenza", fineMeseAvvisi).eq("completata", false),
       ]);
 
