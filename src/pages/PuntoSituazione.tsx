@@ -1026,7 +1026,7 @@ type PraticaWithPunti = {
 export default function PuntoSituazione() {
   const [pratiche, setPratiche] = useState<PraticaWithPunti[]>([]);
   const [ricerca, setRicerca] = useState("");
-  const [filtroColore, setFiltroColore] = useState("tutti");
+  const [filtroColori, setFiltroColori] = useState<string[]>([]);
   
   // States Modale
   const [addDialogOpen, setAddDialogOpen] = useState(false);
