@@ -481,11 +481,9 @@ export default function Calendario() {
         <CardHeader>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={navigatePrev}><ChevronLeft className="h-4 w-4" /></Button>
-                <CardTitle className="text-base sm:text-lg capitalize min-w-0 text-center">{getTitle()}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={navigateNext}><ChevronRight className="h-4 w-4" /></Button>
-              </div>
+              <Button variant="ghost" size="sm" onClick={() => setView("month")} disabled={view === "month"} className="gap-1">
+                <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Mese</span>
+              </Button>
               <Button size="sm" onClick={() => openNewEvent()}>
                 <Plus className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Evento</span>
               </Button>
@@ -497,6 +495,11 @@ export default function Calendario() {
                 <TabsTrigger value="day">Giorno</TabsTrigger>
               </TabsList>
             </Tabs>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="ghost" size="icon" onClick={navigatePrev}><ChevronLeft className="h-4 w-4" /></Button>
+              <CardTitle className="text-base sm:text-lg capitalize min-w-0 text-center">{getTitle()}</CardTitle>
+              <Button variant="ghost" size="icon" onClick={navigateNext}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
