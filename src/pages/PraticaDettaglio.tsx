@@ -712,9 +712,9 @@ export default function PraticaDettaglio() {
 
       {/* Nota pratica modal */}
       <Dialog open={notaPraticaOpen} onOpenChange={setNotaPraticaOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto top-[7%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>{npEditingId ? "Modifica Nota Pratica" : "Nuova Nota Pratica"}</DialogTitle></DialogHeader>
-          <Button className="w-full h-12 sm:hidden" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
+          <Button className="w-full h-12 sm:flex" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Titolo</Label>
@@ -742,7 +742,7 @@ export default function PraticaDettaglio() {
               <Switch checked={npCompletata} onCheckedChange={setNpCompletata} />
               <Label>{npCompletata ? "Fatto" : "Da fare"}</Label>
             </div>
-            <Button className="w-full h-12 hidden sm:flex" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
+            <Button className="w-full h-12 hidden sm:hidden" onClick={addNotaPratica} disabled={!npTitolo.trim()}>{npEditingId ? "Salva Modifiche" : "Aggiungi"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -761,10 +761,10 @@ export default function PraticaDettaglio() {
       */}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto top-[7%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%]">
           <DialogHeader><DialogTitle>Modifica Pratica</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Button type="submit" className="w-full h-12 sm:hidden">Salva Modifiche</Button>
+            <Button type="submit" className="w-full h-12 sm:flex">Salva Modifiche</Button>
             <div className="space-y-2"><Label>Titolo</Label><Input value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} required /></div>
             <div className="space-y-2"><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} /></div>
             <div className="space-y-2">
@@ -829,7 +829,7 @@ export default function PraticaDettaglio() {
               ))}
             </div>
 
-            <Button type="submit" className="w-full h-12 hidden sm:flex">Salva Modifiche</Button>
+            <Button type="submit" className="w-full h-12 hidden sm:hidden">Salva Modifiche</Button>
           </form>
         </DialogContent>
       </Dialog>

@@ -1332,7 +1332,7 @@ export default function PuntoSituazione() {
       </div>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md top-[10%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%] mb-10 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-md top-[7%] translate-y-0 sm:top-[50%] sm:-translate-y-[50%] mb-10 max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nuova nota pratica — {addPraticaTitolo}</DialogTitle></DialogHeader>
           <Button className="w-full h-12 sm:hidden" onClick={handleAdd} disabled={!npTitolo.trim()}>Aggiungi</Button>
           <div className="space-y-4 pb-4">
