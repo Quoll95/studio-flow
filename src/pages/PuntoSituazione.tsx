@@ -1081,9 +1081,10 @@ export default function PuntoSituazione() {
 
   const filtered = pratiche.filter(p => {
     if (ricerca && !p.titolo.toLowerCase().includes(ricerca.toLowerCase())) return false;
-    if (filtroColore !== "tutti") {
-      if (filtroColore === "nessuno") return !p.colore;
-      return p.colore === filtroColore;
+    if (filtroColori.length > 0) {
+      if (filtroColori.includes("nessuno") && !p.colore) return true;
+      if (p.colore && filtroColori.includes(p.colore)) return true;
+      return false;
     }
     return true;
   });
