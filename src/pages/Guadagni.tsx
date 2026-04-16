@@ -3,20 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Euro, TrendingUp, TrendingDown, Wallet, Clock, ChevronDown, ChevronUp, Building2, BarChart3, AlertTriangle } from "lucide-react";
+import { Euro, TrendingUp, TrendingDown, Wallet, Clock, ChevronDown, ChevronUp, Building2, BarChart3, AlertTriangle, ArrowLeft } from "lucide-react";
 import { format, parseISO, getMonth, getYear } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useStatiPratica } from "@/hooks/use-stati-pratica";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import type { Pratica } from "@/types/database";
-
-type Periodo = "mensile" | "trimestrale" | "quadrimestrale" | "annuale";
 
 type SpesaFissa = {
   id: string;
@@ -36,19 +33,15 @@ type Movimento = {
 };
 
 const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
-
 const STATI_CHIUSI = ["chiusa", "archiviata", "completata"];
 
-/** Returns the reference date for preventivato (data_preventivata_fine or fallback) */
 function getDataPreventivato(p: Pratica): Date | null {
   if (p.data_preventivata_fine) return new Date(p.data_preventivata_fine);
-  // Fallback: created_at + 4 months
   const d = new Date(p.created_at);
   d.setMonth(d.getMonth() + 4);
   return d;
 }
 
-/** Calculate spese fisse that fall within a given month/year */
 function calcolaSpeseFisseMensili(spese: SpesaFissa[], mese: number, anno: number): number {
   let totale = 0;
   for (const s of spese) {
@@ -74,89 +67,108 @@ function calcolaSpeseFisseMensili(spese: SpesaFissa[], mese: number, anno: numbe
   return totale;
 }
 
-function getBuckets(periodo: Periodo, anno: number) {
-  if (periodo === "mensile") {
-    return MESI.map((label, i) => ({ label, mesi: [i] }));
-  } else if (periodo === "trimestrale") {
-    return ["Q1 (Gen-Mar)", "Q2 (Apr-Giu)", "Q3 (Lug-Set)", "Q4 (Ott-Dic)"].map((label, qi) => ({
-      label, mesi: [qi * 3, qi * 3 + 1, qi * 3 + 2],
-    }));
-  } else if (periodo === "quadrimestrale") {
-    return ["1° Quadr. (Gen-Apr)", "2° Quadr. (Mag-Ago)", "3° Quadr. (Set-Dic)"].map((label, qi) => ({
-      label, mesi: Array.from({ length: 4 }, (_, i) => qi * 4 + i),
-    }));
-  } else {
-    return [{ label: `${anno}`, mesi: Array.from({ length: 12 }, (_, i) => i) }];
-  }
-}
-
-function meseInBucket(mese: number, bucket: { mesi: number[] }) {
-  return bucket.mesi.includes(mese);
-}
-
-function raggruppaDati(
+/** Build monthly data for chart */
+function buildMonthlyData(
   pratiche: Pratica[],
   movimenti: Movimento[],
   speseFisse: SpesaFissa[],
-  periodo: Periodo,
   anno: number
 ) {
-  const buckets = getBuckets(periodo, anno);
+  const entrateAnno = movimenti.filter(m => m.tipo === "entrata" && getYear(new Date(m.data)) === anno);
+  const usciteAnno = movimenti.filter(m => m.tipo === "uscita" && getYear(new Date(m.data)) === anno);
 
-  // Group entrate (incassato) by their actual date from movimenti
-  const entrateAnno = movimenti.filter(m => {
-    const d = new Date(m.data);
-    return m.tipo === "entrata" && getYear(d) === anno;
-  });
-
-  // Group uscite (costi pratiche) by their actual date from movimenti
-  const usciteAnno = movimenti.filter(m => {
-    const d = new Date(m.data);
-    return m.tipo === "uscita" && getYear(d) === anno;
-  });
-
-  // Group preventivato by data_preventivata_fine
-  const praticheConPreventivato = pratiche.filter(p => {
-    const d = getDataPreventivato(p);
-    return d && getYear(d) === anno && (p.guadagno_preventivato ?? 0) > 0;
-  });
-
-  return buckets.map(b => {
-    const incassato = entrateAnno
-      .filter(m => meseInBucket(getMonth(new Date(m.data)), b))
+  return MESI.map((label, mese) => {
+    const entrate = entrateAnno
+      .filter(m => getMonth(new Date(m.data)) === mese)
       .reduce((s, m) => s + m.importo, 0);
 
     const costiPratiche = usciteAnno
-      .filter(m => meseInBucket(getMonth(new Date(m.data)), b))
+      .filter(m => getMonth(new Date(m.data)) === mese)
       .reduce((s, m) => s + m.importo, 0);
 
-    const praticheBucket = praticheConPreventivato.filter(p => {
-      const d = getDataPreventivato(p)!;
-      return meseInBucket(getMonth(d), b);
+    const speseFisseMese = calcolaSpeseFisseMensili(speseFisse, mese, anno);
+    const uscite = costiPratiche + speseFisseMese;
+
+    // Rimanente: per pratiche con data_preventivata_fine in questo mese
+    const rimanente = pratiche
+      .filter(p => {
+        const d = getDataPreventivato(p);
+        return d && getYear(d) === anno && getMonth(d) === mese && (p.guadagno_preventivato ?? 0) > 0;
+      })
+      .reduce((s, p) => Math.max(0, (p.guadagno_preventivato ?? 0) - (p.soldi_presi ?? 0)) + s, 0);
+
+    return { label, entrate, uscite, rimanente, costiPratiche, speseFisse: speseFisseMese, type: "month" as const, mese };
+  });
+}
+
+/** Build chart data: 12 months + 4 quarterly summary bars interleaved */
+function buildChartData(
+  pratiche: Pratica[],
+  movimenti: Movimento[],
+  speseFisse: SpesaFissa[],
+  anno: number
+) {
+  const monthly = buildMonthlyData(pratiche, movimenti, speseFisse, anno);
+  const result: Array<{
+    label: string;
+    entrate: number;
+    uscite: number;
+    rimanente: number;
+    type: "month" | "quarter";
+  }> = [];
+
+  for (let q = 0; q < 4; q++) {
+    const start = q * 3;
+    for (let i = start; i < start + 3; i++) {
+      result.push(monthly[i]);
+    }
+    // Add quarterly summary
+    const qMonths = monthly.slice(start, start + 3);
+    result.push({
+      label: `Q${q + 1}`,
+      entrate: qMonths.reduce((s, m) => s + m.entrate, 0),
+      uscite: qMonths.reduce((s, m) => s + m.uscite, 0),
+      rimanente: qMonths.reduce((s, m) => s + m.rimanente, 0),
+      type: "quarter",
     });
+  }
 
-    const preventivato = praticheBucket.reduce((s, p) => s + (p.guadagno_preventivato ?? 0), 0);
+  return result;
+}
 
-    // Split preventivato into two stacked parts:
-    // giaPreso = portion already collected (bottom, yellow transparent)
-    // daPrendere = remainder still to collect (top, yellow with red dashed border)
-    const giaPreso = praticheBucket.reduce((s, p) => {
-      const prev = p.guadagno_preventivato ?? 0;
-      const preso = p.soldi_presi ?? 0;
-      return s + Math.min(preso, prev); // cap at preventivato
-    }, 0);
-    const daPrendere = Math.max(0, preventivato - giaPreso);
+/** Build annual comparison data */
+function buildAnnualData(
+  pratiche: Pratica[],
+  movimenti: Movimento[],
+  speseFisse: SpesaFissa[],
+  annoCorrente: number
+) {
+  const anni = [annoCorrente - 2, annoCorrente - 1, annoCorrente];
+  return anni.map(anno => {
+    const entrateAnno = movimenti
+      .filter(m => m.tipo === "entrata" && getYear(new Date(m.data)) === anno)
+      .reduce((s, m) => s + m.importo, 0);
 
-    const speseFissePeriodo = b.mesi.reduce((s, m) => s + calcolaSpeseFisseMensili(speseFisse, m, anno), 0);
-    const totaleSpese = costiPratiche + speseFissePeriodo;
-    const netto = incassato - totaleSpese;
-    const margine = incassato > 0 ? ((incassato - totaleSpese) / incassato * 100) : 0;
-    const scarto = incassato - preventivato;
-    const count = praticheBucket.length;
+    const usciteMov = movimenti
+      .filter(m => m.tipo === "uscita" && getYear(new Date(m.data)) === anno)
+      .reduce((s, m) => s + m.importo, 0);
+
+    const speseFisseAnno = Array.from({ length: 12 }, (_, i) => calcolaSpeseFisseMensili(speseFisse, i, anno))
+      .reduce((a, b) => a + b, 0);
+
+    const rimanente = pratiche
+      .filter(p => {
+        const d = getDataPreventivato(p);
+        return d && getYear(d) === anno && (p.guadagno_preventivato ?? 0) > 0;
+      })
+      .reduce((s, p) => Math.max(0, (p.guadagno_preventivato ?? 0) - (p.soldi_presi ?? 0)) + s, 0);
 
     return {
-      label: b.label, preventivato, giaPreso, daPrendere, incassato, costiPratiche, speseFisse: speseFissePeriodo,
-      totaleSpese, netto, margine, scarto, count,
+      label: String(anno),
+      entrate: entrateAnno,
+      uscite: usciteMov + speseFisseAnno,
+      rimanente,
+      type: "year" as const,
     };
   });
 }
@@ -165,9 +177,10 @@ export default function Guadagni() {
   const [pratiche, setPratiche] = useState<Pratica[]>([]);
   const [movimenti, setMovimenti] = useState<Movimento[]>([]);
   const [speseFisse, setSpeseFisse] = useState<SpesaFissa[]>([]);
-  const [periodo, setPeriodo] = useState<Periodo>("mensile");
   const [anno, setAnno] = useState(new Date().getFullYear());
+  const [vistaAnnuale, setVistaAnnuale] = useState(false);
   const [dettaglioAperto, setDettaglioAperto] = useState(false);
+  const [trimestreAperto, setTrimestreAperto] = useState(false);
   const navigate = useNavigate();
   const { getLabel, getColore } = useStatiPratica();
 
@@ -196,9 +209,11 @@ export default function Guadagni() {
     return Array.from(years).sort((a, b) => b - a);
   }, [pratiche, movimenti]);
 
-  const dati = useMemo(() => raggruppaDati(pratiche, movimenti, speseFisse, periodo, anno), [pratiche, movimenti, speseFisse, periodo, anno]);
+  // Chart data
+  const chartData = useMemo(() => buildChartData(pratiche, movimenti, speseFisse, anno), [pratiche, movimenti, speseFisse, anno]);
+  const annualData = useMemo(() => buildAnnualData(pratiche, movimenti, speseFisse, anno), [pratiche, movimenti, speseFisse, anno]);
 
-  // Totali anno — incassato from movimenti, preventivato from pratiche
+  // Totali anno
   const entrateAnno = movimenti.filter(m => m.tipo === "entrata" && getYear(new Date(m.data)) === anno);
   const usciteAnno = movimenti.filter(m => m.tipo === "uscita" && getYear(new Date(m.data)) === anno);
   const totaleIncassato = entrateAnno.reduce((s, m) => s + m.importo, 0);
@@ -206,7 +221,7 @@ export default function Guadagni() {
 
   const praticheAnnoPreventivato = pratiche.filter(p => {
     const d = getDataPreventivato(p);
-    return d && getYear(d) === anno;
+    return d && getYear(d) === anno && (p.guadagno_preventivato ?? 0) > 0;
   });
   const totalePreventivato = praticheAnnoPreventivato.reduce((s, p) => s + (p.guadagno_preventivato ?? 0), 0);
 
@@ -217,34 +232,42 @@ export default function Guadagni() {
   const margineAnno = totaleIncassato > 0 ? ((totaleIncassato - totaleSpeseComplessive) / totaleIncassato * 100) : 0;
   const scartoAnno = totaleIncassato - totalePreventivato;
 
-  // For detail table, still group pratiche by preventivato date
   const praticheAnno = praticheAnnoPreventivato;
   const praticheAperte = praticheAnno.filter(p => !STATI_CHIUSI.includes(p.stato));
   const praticheChiuse = praticheAnno.filter(p => STATI_CHIUSI.includes(p.stato));
 
-  // Medie periodo
-  const periodiConDati = dati.filter(d => d.count > 0 || d.incassato > 0 || d.speseFisse > 0);
-  const mediaIncassato = periodiConDati.length > 0
-    ? periodiConDati.reduce((s, d) => s + d.incassato, 0) / periodiConDati.length : 0;
-  const mediaNetto = periodiConDati.length > 0
-    ? periodiConDati.reduce((s, d) => s + d.netto, 0) / periodiConDati.length : 0;
-  const mediaSpese = periodiConDati.length > 0
-    ? periodiConDati.reduce((s, d) => s + d.totaleSpese, 0) / periodiConDati.length : 0;
-
-  const periodoLabel = periodo === "mensile" ? "mese" : periodo === "trimestrale" ? "trimestre" : periodo === "quadrimestrale" ? "quadrimestre" : "anno";
+  // Quarterly data for table
+  const quarterlyData = useMemo(() => {
+    const monthly = buildMonthlyData(pratiche, movimenti, speseFisse, anno);
+    return [0, 1, 2, 3].map(q => {
+      const start = q * 3;
+      const qMonths = monthly.slice(start, start + 3);
+      const entrate = qMonths.reduce((s, m) => s + m.entrate, 0);
+      const uscite = qMonths.reduce((s, m) => s + m.uscite, 0);
+      const costiPratiche = qMonths.reduce((s, m) => s + m.costiPratiche, 0);
+      const speseFisseQ = qMonths.reduce((s, m) => s + m.speseFisse, 0);
+      const rimanente = qMonths.reduce((s, m) => s + m.rimanente, 0);
+      const netto = entrate - uscite;
+      return {
+        label: `Q${q + 1} (${MESI[start]}-${MESI[start + 2]})`,
+        entrate,
+        uscite,
+        costiPratiche,
+        speseFisse: speseFisseQ,
+        rimanente,
+        netto,
+      };
+    });
+  }, [pratiche, movimenti, speseFisse, anno]);
 
   const chartConfig = {
-    giaPreso: { label: "Già preso", color: "hsl(200 80% 70%)" },
-    daPrendere: { label: "Da prendere", color: "hsl(200 70% 80%)" },
-    // incassato rimosso dal grafico: il dato è già rappresentato da "giaPreso" nella barra impilata
-    totaleSpese: { label: "Spese totali", color: "hsl(var(--destructive))" },
-    netto: { label: "Netto", color: "hsl(142 71% 45%)" },
+    entrate: { label: "Entrate", color: "hsl(142 71% 45%)" },
+    uscite: { label: "Uscite", color: "hsl(var(--destructive))" },
+    rimanente: { label: "Rimanente da prendere", color: "hsl(200 80% 70%)" },
   };
 
-  // Check which past periods have a scarto
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="space-y-6">
@@ -321,176 +344,200 @@ export default function Guadagni() {
         </div>
       </div>
 
-      {/* Controlli periodo */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex-1">
-              <p className="text-sm font-medium mb-2">Visualizza per</p>
-              <ToggleGroup type="single" value={periodo} onValueChange={v => v && setPeriodo(v as Periodo)} className="justify-start flex-wrap">
-                <ToggleGroupItem value="mensile" className="text-xs px-2 sm:px-3">Mensile</ToggleGroupItem>
-                <ToggleGroupItem value="trimestrale" className="text-xs px-2 sm:px-3">Trim.</ToggleGroupItem>
-                <ToggleGroupItem value="quadrimestrale" className="text-xs px-2 sm:px-3">Quadrim.</ToggleGroupItem>
-                <ToggleGroupItem value="annuale" className="text-xs px-2 sm:px-3">Annuale</ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-2">Anno</p>
-              <Select value={String(anno)} onValueChange={v => setAnno(Number(v))}>
-                <SelectTrigger className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {anniDisponibili.map(a => (
-                    <SelectItem key={a} value={String(a)}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Medie */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Media incassato / {periodoLabel}</p>
-            <p className="text-2xl font-bold">€{mediaIncassato.toFixed(0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Media spese / {periodoLabel}</p>
-            <p className="text-2xl font-bold text-destructive">€{mediaSpese.toFixed(0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-1">Media netto / {periodoLabel}</p>
-            <p className={cn("text-2xl font-bold", mediaNetto >= 0 ? "text-success" : "text-destructive")}>
-              €{mediaNetto.toFixed(0)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Grafico */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Andamento {anno}</CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              {vistaAnnuale && (
+                <Button variant="ghost" size="icon" onClick={() => setVistaAnnuale(false)}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+              <CardTitle className="text-lg">
+                {vistaAnnuale ? "Riepilogo annuale" : `Andamento ${anno}`}
+              </CardTitle>
+              {!vistaAnnuale && (
+                <Button variant="outline" size="sm" onClick={() => setVistaAnnuale(true)}>
+                  Riepilogo annuale
+                </Button>
+              )}
+            </div>
+            <Select value={String(anno)} onValueChange={v => { setAnno(Number(v)); setVistaAnnuale(false); }}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {anniDisponibili.map(a => (
+                  <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
-            <BarChart data={dati} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} className="fill-muted-foreground" interval={0} angle={periodo === "mensile" ? -45 : 0} textAnchor={periodo === "mensile" ? "end" : "middle"} height={periodo === "mensile" ? 50 : 30} />
-              <YAxis tick={{ fontSize: 10 }} className="fill-muted-foreground" tickFormatter={v => `€${v}`} width={55} />
-              <ChartTooltip content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null;
-                const data = payload[0]?.payload;
-                if (!data) return null;
-                return (
-                  <div className="rounded-lg border bg-background p-3 shadow-md text-sm space-y-1">
-                    <p className="font-semibold">{label}</p>
-                    <p className="text-sky-500">Preventivato: €{data.preventivato?.toFixed(2)}</p>
-                    <p className="text-success">Guadagni totali: €{data.incassato?.toFixed(2)}</p>
-                    <p className="text-destructive">Spese totali: €{data.totaleSpese?.toFixed(2)}</p>
-                  </div>
-                );
-              }} />
-              <Bar dataKey="giaPreso" stackId="preventivato" fill="hsl(200 80% 70%)" fillOpacity={0.3} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="daPrendere" stackId="preventivato" fill="hsl(200 70% 80%)" fillOpacity={0.5} stroke="hsl(var(--destructive))" strokeDasharray="4 2" strokeWidth={1.5} radius={[4, 4, 0, 0]} />
-              {/* <Bar dataKey="incassato" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} /> — rimosso: dato già in giaPreso */}
-              <Bar dataKey="totaleSpese" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="netto" fill="hsl(142 71% 45%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-
-      {/* Tabella riepilogo periodi */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Riepilogo per {periodoLabel}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left p-2 sm:p-3 font-medium text-muted-foreground">Periodo</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden md:table-cell">Preventivato</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground">Incassato</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden sm:table-cell">Costi</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden md:table-cell">Spese fisse</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground">Netto</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground">Scarto</th>
-                  <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden lg:table-cell">Margine</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dati.map((d, idx) => {
-                  // Determine if this period is in the past (for scarto highlighting)
-                  let isPast = false;
-                  if (anno < currentYear) {
-                    isPast = true;
-                  } else if (anno === currentYear) {
-                    const buckets = getBuckets(periodo, anno);
-                    const bucket = buckets[idx];
-                    if (bucket) {
-                      const maxMonth = Math.max(...bucket.mesi);
-                      isPast = maxMonth < currentMonth;
-                    }
-                  }
-                  const hasScarto = isPast && d.scarto !== 0 && (d.preventivato > 0 || d.incassato > 0);
-
-                  return (
-                    <tr key={d.label} className={cn("border-b hover:bg-muted/20 transition-colors", hasScarto && d.scarto < 0 && "bg-destructive/5")}>
-                      <td className="p-2 sm:p-3 font-medium text-xs sm:text-sm">{d.label}</td>
-                      <td className="p-2 sm:p-3 text-right hidden md:table-cell text-sky-500">€{d.preventivato.toFixed(0)}</td>
-                      <td className="p-2 sm:p-3 text-right">€{d.incassato.toFixed(0)}</td>
-                      <td className="p-2 sm:p-3 text-right hidden sm:table-cell text-destructive">€{d.costiPratiche.toFixed(0)}</td>
-                      <td className="p-2 sm:p-3 text-right hidden md:table-cell text-orange-500">€{d.speseFisse.toFixed(0)}</td>
-                      <td className={cn("p-2 sm:p-3 text-right font-medium", d.netto >= 0 ? "text-success" : "text-destructive")}>
-                        €{d.netto.toFixed(0)}
-                      </td>
-                      <td className="p-2 sm:p-3 text-right">
-                        {(d.preventivato > 0 || d.incassato > 0) ? (
-                          <span className={cn("font-medium inline-flex items-center gap-1",
-                            d.scarto < 0 ? "text-destructive" : d.scarto > 0 ? "text-success" : "text-muted-foreground"
-                          )}>
-                            {hasScarto && d.scarto < 0 && <AlertTriangle className="h-3 w-3" />}
-                            {d.scarto >= 0 ? "+" : ""}€{d.scarto.toFixed(0)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className={cn("p-2 sm:p-3 text-right hidden lg:table-cell", d.margine >= 0 ? "text-success" : "text-destructive")}>
-                        {d.margine.toFixed(0)}%
-                      </td>
-                    </tr>
-                  );
-                })}
-                {/* Totale row */}
-                <tr className="border-t-2 font-bold bg-muted/20">
-                  <td className="p-2 sm:p-3 text-xs sm:text-sm">Totale</td>
-                  <td className="p-2 sm:p-3 text-right hidden md:table-cell text-sky-500">€{dati.reduce((s, d) => s + d.preventivato, 0).toFixed(0)}</td>
-                  <td className="p-2 sm:p-3 text-right">€{dati.reduce((s, d) => s + d.incassato, 0).toFixed(0)}</td>
-                  <td className="p-2 sm:p-3 text-right hidden sm:table-cell text-destructive">€{dati.reduce((s, d) => s + d.costiPratiche, 0).toFixed(0)}</td>
-                  <td className="p-2 sm:p-3 text-right hidden md:table-cell text-orange-500">€{dati.reduce((s, d) => s + d.speseFisse, 0).toFixed(0)}</td>
-                  <td className={cn("p-2 sm:p-3 text-right", nettoReale >= 0 ? "text-success" : "text-destructive")}>€{nettoReale.toFixed(0)}</td>
-                  <td className={cn("p-2 sm:p-3 text-right font-medium", scartoAnno < 0 ? "text-destructive" : scartoAnno > 0 ? "text-success" : "")}>
-                    {scartoAnno >= 0 ? "+" : ""}€{scartoAnno.toFixed(0)}
-                  </td>
-                  <td className={cn("p-2 sm:p-3 text-right hidden lg:table-cell", margineAnno >= 0 ? "text-success" : "text-destructive")}>{margineAnno.toFixed(0)}%</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Legend */}
+          <div className="flex items-center gap-4 mb-4 text-xs flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: "hsl(142 71% 45%)" }} />
+              <span>Entrate</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: "hsl(0 84% 60%)" }} />
+              <span>Uscite</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: "hsl(200 80% 70%)" }} />
+              <span>Rimanente da prendere</span>
+            </div>
+            {!vistaAnnuale && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-3 w-3 rounded-sm border-2 border-dashed" style={{ borderColor: "hsl(280 60% 60%)", backgroundColor: "transparent" }} />
+                <span>Riepilogo trimestrale</span>
+              </div>
+            )}
           </div>
+
+          {vistaAnnuale ? (
+            /* Vista annuale: 3 anni affiancati */
+            <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
+              <BarChart data={annualData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `€${v}`} width={55} />
+                <ChartTooltip content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const data = payload[0]?.payload;
+                  if (!data) return null;
+                  return (
+                    <div className="rounded-lg border bg-background p-3 shadow-md text-sm space-y-1">
+                      <p className="font-semibold">{label}</p>
+                      <p className="text-success">Entrate: €{data.entrate?.toFixed(2)}</p>
+                      <p className="text-destructive">Uscite: €{data.uscite?.toFixed(2)}</p>
+                      <p className="text-sky-500">Rimanente: €{data.rimanente?.toFixed(2)}</p>
+                    </div>
+                  );
+                }} />
+                <Bar dataKey="entrate" fill="hsl(142 71% 45%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="uscite" fill="hsl(0 84% 60%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="rimanente" fill="hsl(200 80% 70%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            /* Vista mensile con barre trimestrali */
+            <ChartContainer config={chartConfig} className="h-[280px] sm:h-[350px] w-full">
+              <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 9 }}
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `€${v}`} width={55} />
+                <ChartTooltip content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const data = payload[0]?.payload;
+                  if (!data) return null;
+                  const isQ = data.type === "quarter";
+                  return (
+                    <div className="rounded-lg border bg-background p-3 shadow-md text-sm space-y-1">
+                      <p className="font-semibold">{isQ ? `${label} (Trimestre)` : label}</p>
+                      <p className="text-success">Entrate: €{data.entrate?.toFixed(2)}</p>
+                      <p className="text-destructive">Uscite: €{data.uscite?.toFixed(2)}</p>
+                      <p className="text-sky-500">Rimanente: €{data.rimanente?.toFixed(2)}</p>
+                      {isQ && (
+                        <p className="font-medium pt-1 border-t">
+                          Netto: <span className={data.entrate - data.uscite >= 0 ? "text-success" : "text-destructive"}>
+                            €{(data.entrate - data.uscite).toFixed(2)}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                }} />
+                {/* For monthly items: grouped bars. For quarterly: stacked. We use conditional rendering via Cell colors */}
+                <Bar dataKey="entrate" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.type === "quarter" ? "hsl(142 71% 45% / 0.7)" : "hsl(142 71% 45%)"} stroke={entry.type === "quarter" ? "hsl(280 60% 60%)" : undefined} strokeWidth={entry.type === "quarter" ? 2 : 0} strokeDasharray={entry.type === "quarter" ? "4 2" : undefined} />
+                  ))}
+                </Bar>
+                <Bar dataKey="uscite" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.type === "quarter" ? "hsl(0 84% 60% / 0.7)" : "hsl(0 84% 60%)"} stroke={entry.type === "quarter" ? "hsl(280 60% 60%)" : undefined} strokeWidth={entry.type === "quarter" ? 2 : 0} strokeDasharray={entry.type === "quarter" ? "4 2" : undefined} />
+                  ))}
+                </Bar>
+                <Bar dataKey="rimanente" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.type === "quarter" ? "hsl(200 80% 70% / 0.7)" : "hsl(200 80% 70%)"} stroke={entry.type === "quarter" ? "hsl(280 60% 60%)" : undefined} strokeWidth={entry.type === "quarter" ? 2 : 0} strokeDasharray={entry.type === "quarter" ? "4 2" : undefined} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          )}
         </CardContent>
       </Card>
+
+      {/* Riepilogo per trimestre — collapsabile */}
+      <Collapsible open={trimestreAperto} onOpenChange={setTrimestreAperto}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Riepilogo per trimestre</CardTitle>
+                <Button variant="ghost" size="icon">
+                  {trimestreAperto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left p-2 sm:p-3 font-medium text-muted-foreground">Periodo</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground">Entrate</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden sm:table-cell">Costi pratiche</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden md:table-cell">Spese fisse</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground">Uscite tot.</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground hidden md:table-cell">Rimanente</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-muted-foreground">Netto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quarterlyData.map((d) => (
+                      <tr key={d.label} className="border-b hover:bg-muted/20 transition-colors">
+                        <td className="p-2 sm:p-3 font-medium text-xs sm:text-sm">{d.label}</td>
+                        <td className="p-2 sm:p-3 text-right text-success">€{d.entrate.toFixed(0)}</td>
+                        <td className="p-2 sm:p-3 text-right hidden sm:table-cell text-destructive">€{d.costiPratiche.toFixed(0)}</td>
+                        <td className="p-2 sm:p-3 text-right hidden md:table-cell text-orange-500">€{d.speseFisse.toFixed(0)}</td>
+                        <td className="p-2 sm:p-3 text-right text-destructive">€{d.uscite.toFixed(0)}</td>
+                        <td className="p-2 sm:p-3 text-right hidden md:table-cell text-sky-500">€{d.rimanente.toFixed(0)}</td>
+                        <td className={cn("p-2 sm:p-3 text-right font-medium", d.netto >= 0 ? "text-success" : "text-destructive")}>
+                          €{d.netto.toFixed(0)}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 font-bold bg-muted/20">
+                      <td className="p-2 sm:p-3 text-xs sm:text-sm">Totale</td>
+                      <td className="p-2 sm:p-3 text-right text-success">€{quarterlyData.reduce((s, d) => s + d.entrate, 0).toFixed(0)}</td>
+                      <td className="p-2 sm:p-3 text-right hidden sm:table-cell text-destructive">€{quarterlyData.reduce((s, d) => s + d.costiPratiche, 0).toFixed(0)}</td>
+                      <td className="p-2 sm:p-3 text-right hidden md:table-cell text-orange-500">€{quarterlyData.reduce((s, d) => s + d.speseFisse, 0).toFixed(0)}</td>
+                      <td className="p-2 sm:p-3 text-right text-destructive">€{quarterlyData.reduce((s, d) => s + d.uscite, 0).toFixed(0)}</td>
+                      <td className="p-2 sm:p-3 text-right hidden md:table-cell text-sky-500">€{quarterlyData.reduce((s, d) => s + d.rimanente, 0).toFixed(0)}</td>
+                      <td className={cn("p-2 sm:p-3 text-right font-medium", nettoReale >= 0 ? "text-success" : "text-destructive")}>€{nettoReale.toFixed(0)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Dettaglio pratiche collassabile */}
       <Collapsible open={dettaglioAperto} onOpenChange={setDettaglioAperto}>
