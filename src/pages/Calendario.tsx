@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Plus, Trash2, Bell, StickyNote, Edit } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, Trash2, Bell, StickyNote, Edit } from "lucide-react";
 import TimePicker from "@/components/TimePicker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, parseISO, isToday, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, isSameMonth } from "date-fns";
@@ -481,11 +481,9 @@ export default function Calendario() {
         <CardHeader>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={navigatePrev}><ChevronLeft className="h-4 w-4" /></Button>
-                <CardTitle className="text-base sm:text-lg capitalize min-w-0 text-center">{getTitle()}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={navigateNext}><ChevronRight className="h-4 w-4" /></Button>
-              </div>
+              <Button variant="ghost" size="sm" onClick={() => setView("month")} disabled={view === "month"} className="gap-1">
+                <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Mese</span>
+              </Button>
               <Button size="sm" onClick={() => openNewEvent()}>
                 <Plus className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Evento</span>
               </Button>
@@ -497,6 +495,11 @@ export default function Calendario() {
                 <TabsTrigger value="day">Giorno</TabsTrigger>
               </TabsList>
             </Tabs>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="ghost" size="icon" onClick={navigatePrev}><ChevronLeft className="h-4 w-4" /></Button>
+              <CardTitle className="text-base sm:text-lg capitalize min-w-0 text-center">{getTitle()}</CardTitle>
+              <Button variant="ghost" size="icon" onClick={navigateNext}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

@@ -398,7 +398,7 @@ export default function PraticaDettaglio() {
           <p className="text-muted-foreground text-sm mt-1">Creata il {format(parseISO(pratica.created_at), "dd MMMM yyyy", { locale: it })}</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" className="h-10" onClick={handlePrint}><Printer className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline"> Stampa</span></Button>
+          <Button variant="outline" size="sm" className="h-10" onClick={handlePrint}><Printer className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline"> Stampa</span></Button>
           <Button className="h-10" onClick={openEdit}><Edit className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline"> Modifica</span></Button>
         </div>
       </div>
