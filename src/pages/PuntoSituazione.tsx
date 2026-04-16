@@ -1193,23 +1193,37 @@ export default function PuntoSituazione() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Cerca pratica..." className="pl-9" value={ricerca} onChange={e => setRicerca(e.target.value)} />
         </div>
-        <Select value={filtroColore} onValueChange={setFiltroColore}>
-          <SelectTrigger className="w-36 sm:w-44">
-            <SelectValue placeholder="Tutti i colori" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tutti">Tutti i colori</SelectItem>
-            <SelectItem value="nessuno">Senza colore</SelectItem>
-            {colori.map(c => (
-              <SelectItem key={c.id} value={c.colore}>
-                <div className="flex items-center gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-36 sm:w-44 justify-between">
+              {filtroColori.length === 0 ? "Tutti i colori" : `${filtroColori.length} selezionati`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="end">
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                <Checkbox checked={filtroColori.includes("nessuno")} onCheckedChange={(checked) => {
+                  setFiltroColori(prev => checked ? [...prev, "nessuno"] : prev.filter(c => c !== "nessuno"));
+                }} />
+                Senza colore
+              </label>
+              {colori.map(c => (
+                <label key={c.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                  <Checkbox checked={filtroColori.includes(c.colore)} onCheckedChange={(checked) => {
+                    setFiltroColori(prev => checked ? [...prev, c.colore] : prev.filter(v => v !== c.colore));
+                  }} />
                   <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.colore }} />
                   {c.label}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                </label>
+              ))}
+              {filtroColori.length > 0 && (
+                <Button variant="ghost" size="sm" className="w-full mt-1" onClick={() => setFiltroColori([])}>
+                  Resetta filtri
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="print-situazione">
